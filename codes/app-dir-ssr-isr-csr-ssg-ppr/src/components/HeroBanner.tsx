@@ -1,0 +1,17 @@
+export default async function HeroBanner() {
+  const [, quote] = await Promise.all([wait(), fetchQuote()]);
+
+  return <p>{quote}</p>;
+}
+
+async function wait() {
+  return new Promise((resolve) => setTimeout(resolve, 500));
+}
+
+async function fetchQuote(): Promise<string> {
+  const res = await fetch("https://dummyjson.com/quotes/random");
+  const data = await res.json();
+  const quote = data.quote;
+
+  return quote;
+}
