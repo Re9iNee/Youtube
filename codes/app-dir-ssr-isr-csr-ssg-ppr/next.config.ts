@@ -6,7 +6,7 @@ const nextConfig: NextConfig = {
     remotePatterns: [new URL("https://cdn.dummyjson.com/**")],
   },
   experimental: {
-    ppr: "incremental",
+    ppr: true,
   },
 };
 

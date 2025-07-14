@@ -1,5 +1,5 @@
 export default async function HeroBanner() {
-  const [, quote] = await Promise.all([wait(), fetchQuote()]);
+  const [quote] = await Promise.all([fetchQuote(), wait()]);
 
   return <p>{quote}</p>;
 }
