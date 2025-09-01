@@ -1,55 +1,40 @@
 "use client";
 
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { UIMessage, useChat } from "@ai-sdk/react";
+import { DefaultChatTransport } from "ai";
 import { Send } from "lucide-react";
-
-interface Message {
-  id: string;
-  text: string;
-  isUser: boolean;
-  timestamp: Date;
-}
+import { useState } from "react";
 
 export default function Home() {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "1",
-      text: "Hello! I'm your AI assistant. How can I help you today?",
-      isUser: false,
-      timestamp: new Date(),
-    },
-  ]);
+  const { messages, sendMessage, status } = useChat<UIMessage>({
+    transport: new DefaultChatTransport({ api: "/api/chat" }),
+    messages: [
+      {
+        id: "1",
+        role: "system",
+        parts: [
+          {
+            type: "text",
+            text: "Hello This is an AI Assistant, feel free to ask anything",
+          },
+        ],
+      },
+    ],
+  });
+
   const [inputValue, setInputValue] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
 
   const handleSendMessage = async () => {
-    if (!inputValue.trim()) return;
-
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      text: inputValue,
-      isUser: true,
-      timestamp: new Date(),
-    };
-
-    setMessages((prev) => [...prev, userMessage]);
-    setInputValue("");
-    setIsLoading(true);
-
     // Simulate AI response (replace with actual API call)
-    setTimeout(() => {
-      const aiMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        text: `I received your message: "${inputValue}". This is a simulated response. In a real app, you'd integrate with an AI API here.`,
-        isUser: false,
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, aiMessage]);
-      setIsLoading(false);
-    }, 1000);
+    if (!inputValue.trim()) {
+      return;
+    }
+
+    sendMessage({ text: inputValue });
+    setInputValue("");
   };
 
   const handleKeydown = (e: React.KeyboardEvent) => {
@@ -69,30 +54,29 @@ export default function Home() {
         <Card className="mb-4">
           <CardContent className="p-0">
             <div className="h-96 overflow-y-auto p-4 space-y-4">
-              {messages.map((message) => (
+              {messages.map(({ id, parts, role, metadata }) => (
                 <div
-                  key={message.id}
-                  className={`flex ${message.isUser ? "justify-end" : "justify-start"}`}
+                  key={id}
+                  className={`flex ${role === "user" ? "justify-end" : "justify-start"}`}
                 >
                   <div
                     className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                      message.isUser
+                      role === "user"
                         ? "bg-blue-500 text-white"
                         : "bg-white text-gray-800 border"
                     }`}
                   >
-                    <p className="text-sm">{message.text}</p>
-                    <p
-                      className={`text-xs mt-1 ${
-                        message.isUser ? "text-blue-100" : "text-gray-500"
-                      }`}
-                    >
-                      {message.timestamp.toLocaleTimeString()}
+                    <p className="text-sm">
+                      {parts.map((part, index) =>
+                        part.type === "text" ? (
+                          <span key={index}>{part.text}</span>
+                        ) : null
+                      )}
                     </p>
                   </div>
                 </div>
               ))}
-              {isLoading && (
+              {status !== "ready" && (
                 <div className="flex justify-start">
                   <div className="bg-white text-gray-800 border px-4 py-2 rounded-lg">
                     <p className="text-sm">AI is thinking...</p>
@@ -110,11 +94,11 @@ export default function Home() {
             onKeyDown={handleKeydown}
             placeholder="Type your message..."
             className="flex-1"
-            disabled={isLoading}
+            disabled={status !== "ready"}
           />
           <Button
             onClick={handleSendMessage}
-            disabled={!inputValue.trim() || isLoading}
+            disabled={!inputValue.trim() || status !== "ready"}
             size="icon"
           >
             <Send className="h-4 w-4" />
